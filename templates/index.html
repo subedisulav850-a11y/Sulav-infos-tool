@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SULAV info tool — Free Fire</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --bg:#07080f;--bg2:#0c0d18;--bg3:#10111e;--bg4:#141525;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.1);
+  --red:#e11d48;--red2:#f43f5e;--red3:#fb7185;--dark:#9f1239;
+  --glow:rgba(225,29,72,.2);--glow2:rgba(225,29,72,.08);
+  --text:#f1f5f9;--muted:#64748b;--muted2:#94a3b8;
+  --green:#22c55e;--yellow:#eab308;--blue:#3b82f6;--purple:#a855f7;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--red);border-radius:2px}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* Canvas */
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* Nav */
+header{position:fixed;top:0;left:0;right:0;z-index:200;background:rgba(7,8,15,.92);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav{max-width:1180px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--red),var(--dark));display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff;box-shadow:0 0 16px var(--glow)}
+.logo-name{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.logo-name em{color:var(--red);font-style:normal}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:.3px;margin-top:1px}
+.nav-r{display:flex;align-items:center;gap:8px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 11px;border-radius:100px;font-size:11px;font-weight:700}
+.badge-live{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--green)}
+.badge-v{background:rgba(225,29,72,.1);border:1px solid rgba(225,29,72,.2);color:var(--red2)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* Hero */
+.hero{position:relative;z-index:1;text-align:center;padding:116px 24px 52px}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;background:rgba(225,29,72,.07);border:1px solid rgba(225,29,72,.18);color:var(--red3);font-size:12px;font-weight:600;padding:5px 14px;border-radius:100px;margin-bottom:24px}
+.hero h1{font-size:clamp(42px,7.5vw,82px);font-weight:900;letter-spacing:-3px;line-height:.95;margin-bottom:18px}
+.hero h1 .r{background:linear-gradient(135deg,#e11d48,#f43f5e 45%,#fb7185 80%,#fda4af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-sub{font-size:16px;color:var(--muted2);max-width:460px;margin:0 auto 28px;line-height:1.7}
+.hero-cred{display:flex;align-items:center;justify-content:center;gap:10px;font-size:13px;flex-wrap:wrap}
+.hero-cred a{color:var(--red2);font-weight:700;text-decoration:none}
+.hero-cred a:hover{text-decoration:underline}
+.hero-cred .sep{color:var(--border2);font-size:15px}
+
+/* Endpoint pills */
+.ep-strip{position:relative;z-index:1;max-width:800px;margin:0 auto 52px;padding:0 24px}
+.ep-pills{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ep-pill{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:8px;transition:.2s}
+.ep-pill:hover{border-color:rgba(225,29,72,.3);box-shadow:0 0 20px var(--glow2)}
+.ep-m{font-size:10px;font-weight:800;color:var(--green);letter-spacing:.5px}
+.ep-p{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text)}
+.ep-p .v{color:var(--red3)}
+.ep-tag{font-size:10px;font-weight:700;padding:1px 7px;border-radius:4px;background:rgba(225,29,72,.1);border:1px solid rgba(225,29,72,.2);color:var(--red2)}
+
+/* Tool */
+.tool{position:relative;z-index:1;max-width:800px;margin:0 auto;padding:0 24px 100px}
+
+/* Tabs */
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg2);border:1px solid var(--border);border-radius:13px;padding:5px;gap:4px;margin-bottom:18px}
+.tab{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:9px;border:none;font-size:13px;font-weight:600;color:var(--muted2);background:transparent;cursor:pointer;transition:.2s;width:100%}
+.tab:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.tab.on{background:linear-gradient(135deg,rgba(225,29,72,.18),rgba(225,29,72,.06));color:var(--red2);border:1px solid rgba(225,29,72,.2)}
+
+/* Panel */
+.panel{display:none}.panel.on{display:block}
+
+/* Card */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:14px}
+.card-top{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-ico{width:32px;height:32px;border-radius:8px;background:rgba(225,29,72,.1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.card-title{font-size:14px;font-weight:700}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.card-body{padding:20px 22px}
+
+/* Form */
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1;min-width:120px}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.inp,.sel{width:100%;padding:10px 13px;background:var(--bg3);border:1px solid rgba(255,255,255,.07);border-radius:9px;color:var(--text);font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:.2s}
+.inp:focus,.sel:focus{border-color:rgba(225,29,72,.45);box-shadow:0 0 0 3px rgba(225,29,72,.07)}
+.inp::placeholder{color:var(--muted)}
+.sel option{background:var(--bg2)}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.auto-note{display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.18);color:var(--green);font-size:11px;font-weight:600;padding:3px 10px;border-radius:100px;margin-top:9px}
+
+/* Button */
+.btn{width:100%;margin-top:16px;padding:13px;border-radius:10px;background:linear-gradient(135deg,#e11d48,#9f1239);color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.2s;box-shadow:0 4px 22px rgba(225,29,72,.28);letter-spacing:.1px}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 30px rgba(225,29,72,.38)}
+.btn:disabled{opacity:.48;cursor:not-allowed;transform:none;box-shadow:none}
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Result cards */
+.rcard{background:var(--bg2);border:1px solid var(--border);border-radius:15px;overflow:hidden;animation:fu .3s ease;margin-top:4px}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Profile top */
+.ptop{padding:20px 22px;background:linear-gradient(135deg,rgba(225,29,72,.06),transparent 55%);border-bottom:1px solid var(--border)}
+.phead{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.pav{width:58px;height:58px;border-radius:14px;background:linear-gradient(135deg,rgba(225,29,72,.2),rgba(159,18,57,.1));display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;border:2px solid rgba(225,29,72,.18)}
+.pmeta{flex:1;min-width:0}
+.pname{font-size:20px;font-weight:800;letter-spacing:-.4px;word-break:break-all;line-height:1.2}
+.puid{font-size:11px;color:var(--muted2);font-family:'JetBrains Mono',monospace;margin-top:4px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tag{padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700}
+.t-red{background:rgba(225,29,72,.1);border:1px solid rgba(225,29,72,.2);color:var(--red2)}
+.t-green{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--green)}
+.t-yellow{background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.2);color:var(--yellow)}
+.t-purple{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.2);color:var(--purple)}
+.t-blue{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:var(--blue)}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:8px}
+.info-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 13px;transition:.2s}
+.info-box:hover{border-color:rgba(225,29,72,.22)}
+.ib-val{font-size:17px;font-weight:800;line-height:1}
+.ib-key{font-size:11px;color:var(--muted);margin-top:4px}
+.red{color:var(--red2)}.green{color:var(--green)}.yellow{color:var(--yellow)}.purple{color:var(--purple)}.blue{color:var(--blue)}
+
+/* Section */
+.psec{padding:16px 22px;border-top:1px solid var(--border)}
+.psec-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px}
+
+/* Info rows */
+.irow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.irow:last-child{border-bottom:none}
+.irow-k{color:var(--muted2)}
+.irow-v{font-weight:600;text-align:right;word-break:break-all;max-width:60%}
+
+/* Search results */
+.slist{display:flex;flex-direction:column;gap:7px;padding:14px 22px}
+.sitem{background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:12px 15px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:.2s}
+.sitem:hover{border-color:rgba(225,29,72,.32);background:rgba(225,29,72,.03);transform:translateX(2px)}
+.sav{width:36px;height:36px;border-radius:9px;background:rgba(225,29,72,.1);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.sinfo{flex:1;min-width:0}
+.sname{font-size:14px;font-weight:700;word-break:break-all}
+.smeta{font-size:11px;color:var(--muted);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.sarrow{color:var(--red2);flex-shrink:0}
+
+/* Raw */
+.raw-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);border-top:1px solid var(--border);user-select:none;transition:.15s}
+.raw-hd:hover{color:var(--text)}
+.raw-pre{display:none;padding:0 18px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;max-height:280px;overflow-y:auto;white-space:pre-wrap;word-break:break-word}
+.raw-pre.on{display:block}
+
+/* Credits */
+.cred{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+.cred a{color:var(--red2);font-weight:700;text-decoration:none}.cred a:hover{text-decoration:underline}
+.cred .s{color:rgba(255,255,255,.1)}
+
+/* Error / empty */
+.emsg{padding:36px 20px;text-align:center}
+.emsg-i{font-size:36px;margin-bottom:12px}
+.emsg-t{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--red2)}
+.emsg-s{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* JSON colors */
+.jk{color:#60a5fa}.js{color:#4ade80}.jn{color:var(--red3)}.jb{color:var(--purple)}.jnu{color:var(--muted)}
+
+/* Glow div */
+.gd{height:1px;background:linear-gradient(90deg,transparent,var(--red),transparent);margin:0 0 52px;position:relative;z-index:1}
+
+/* Footer */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:36px 24px;text-align:center}
+.fn{font-size:20px;font-weight:900;letter-spacing:-.4px;margin-bottom:5px}
+.fn em{color:var(--red);font-style:normal}
+.fsub{font-size:13px;color:var(--muted2);margin-bottom:14px}
+.flinks{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px}
+.flinks a{color:var(--red2);font-weight:700;text-decoration:none}.flinks a:hover{text-decoration:underline}
+.flinks span{color:rgba(255,255,255,.1)}
+.fnote{font-size:11px;color:var(--muted);margin-top:12px}
+
+@media(max-width:560px){
+  .tabs{grid-template-columns:1fr}
+  .tab .tl{display:none}
+  .info-grid{grid-template-columns:repeat(2,1fr)}
+  .ep-pills{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+<canvas id="bgc"></canvas>
+
+<!-- NAV -->
+<header>
+  <div class="nav">
+    <a href="#" class="logo">
+      <div class="logo-icon">S</div>
+      <div>
+        <div class="logo-name">SULAV <em>info tool</em></div>
+        <div class="logo-sub">FREE FIRE INTELLIGENCE</div>
+      </div>
+    </a>
+    <div class="nav-r">
+      <div class="badge badge-live"><div class="dot"></div>Online</div>
+      <div class="badge badge-v">v2.0</div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="eyebrow">🔥 Free Fire Player Intelligence</div>
+  <h1>SULAV<br><span class="r">info tool</span></h1>
+  <p class="hero-sub">Instant Free Fire player info by UID or Name — server auto-detected across 13 regions worldwide.</p>
+  <div class="hero-cred">
+    <a href="https://t.me/sulav_don2" target="_blank">👤 @sulav_don2</a>
+    <span class="sep">|</span>
+    <a href="https://t.me/sulav_codex_ff" target="_blank">📡 @sulav_codex_ff</a>
+  </div>
+</div>
+
+<!-- ENDPOINT PILLS -->
+<div class="ep-strip">
+  <div class="ep-pills">
+    <div class="ep-pill"><span class="ep-m">GET</span><span class="ep-p">/info?uid=<span class="v">{uid}</span></span><span class="ep-tag">⚡ AUTO</span></div>
+    <div class="ep-pill"><span class="ep-m">GET</span><span class="ep-p">/stats?uid=<span class="v">{uid}</span></span><span class="ep-tag">⚡ AUTO</span></div>
+    <div class="ep-pill"><span class="ep-m">GET</span><span class="ep-p">/search?name=<span class="v">{name}</span>&server=<span class="v">{region}</span></span></div>
+  </div>
+</div>
+
+<!-- TOOL -->
+<div class="tool" id="tool">
+  <div class="tabs">
+    <button class="tab on" onclick="goTab(0,this)"><span>🆔</span><span class="tl">UID Lookup</span></button>
+    <button class="tab" onclick="goTab(1,this)"><span>🔍</span><span class="tl">Name Search</span></button>
+    <button class="tab" onclick="goTab(2,this)"><span>📊</span><span class="tl">Stats</span></button>
+  </div>
+
+  <!-- Panel 0: UID -->
+  <div class="panel on" id="p0">
+    <div class="card">
+      <div class="card-top">
+        <div class="card-ico">🆔</div>
+        <div><div class="card-title">Lookup by UID</div><div class="card-sub">Enter UID — server auto-detected across all regions</div></div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col" style="flex:2;min-width:160px">
+            <label class="lbl">Player UID</label>
+            <input class="inp" id="i-uid" type="number" placeholder="e.g. 1633864660" autocomplete="off">
+          </div>
+          <div class="col">
+            <label class="lbl">Server <span style="color:var(--green);font-size:10px">(optional)</span></label>
+            <select class="sel" id="i-uid-srv">
+              <option value="AUTO">⚡ Auto Detect</option>
+              {% for s in servers %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="auto-note">No region needed — auto-detected from all 13 servers</div>
+        <button class="btn" id="b-uid" onclick="doUID()">🔍 Lookup Player</button>
+      </div>
+    </div>
+    <div id="r-uid"></div>
+  </div>
+
+  <!-- Panel 1: Name -->
+  <div class="panel" id="p1">
+    <div class="card">
+      <div class="card-top">
+        <div class="card-ico">🔍</div>
+        <div><div class="card-title">Search by Nickname</div><div class="card-sub">Find players by their in-game name</div></div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col" style="flex:2;min-width:160px">
+            <label class="lbl">Player Nickname</label>
+            <input class="inp" id="i-name" type="text" placeholder="Min. 3 characters..." maxlength="30">
+          </div>
+          <div class="col">
+            <label class="lbl">Server Region</label>
+            <select class="sel" id="i-srv">
+              {% for s in servers %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <p class="hint">Select the region to search. Click any result to view full profile.</p>
+        <button class="btn" id="b-name" onclick="doName()">🔍 Search Players</button>
+      </div>
+    </div>
+    <div id="r-name"></div>
+  </div>
+
+  <!-- Panel 2: Stats -->
+  <div class="panel" id="p2">
+    <div class="card">
+      <div class="card-top">
+        <div class="card-ico">📊</div>
+        <div><div class="card-title">Player Statistics</div><div class="card-sub">Get BR or CS stats — region auto-detected</div></div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col" style="flex:2;min-width:160px">
+            <label class="lbl">Player UID</label>
+            <input class="inp" id="i-suid" type="number" placeholder="e.g. 1633864660">
+          </div>
+          <div class="col">
+            <label class="lbl">Server <span style="color:var(--green);font-size:10px">(optional)</span></label>
+            <select class="sel" id="i-ssrv">
+              <option value="AUTO">⚡ Auto Detect</option>
+              {% for s in servers %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <div class="col">
+            <label class="lbl">Mode</label>
+            <select class="sel" id="i-gm"><option value="br">🔫 Battle Royale</option><option value="cs">⚔️ Clash Squad</option></select>
+          </div>
+          <div class="col">
+            <label class="lbl">Match Type</label>
+            <select class="sel" id="i-mm"><option value="CAREER">🏆 Career</option><option value="RANKED">💎 Ranked</option><option value="NORMAL">🎮 Normal</option></select>
+          </div>
+        </div>
+        <div class="auto-note">No region needed — auto-detected from all 13 servers</div>
+        <button class="btn" id="b-stats" onclick="doStats()">📊 Get Stats</button>
+      </div>
+    </div>
+    <div id="r-stats"></div>
+  </div>
+</div>
+
+<div class="gd"></div>
+
+<footer>
+  <div class="fn">SULAV <em>info tool</em></div>
+  <div class="fsub">Free Fire Player Intelligence · 13 Servers · Auto Detect</div>
+  <div class="flinks">
+    <a href="https://t.me/sulav_don2" target="_blank">👤 @sulav_don2</a>
+    <span>·</span>
+    <a href="https://t.me/sulav_codex_ff" target="_blank">📡 @sulav_codex_ff</a>
+  </div>
+  <div class="fnote">Unofficial · Not affiliated with Garena or Free Fire</div>
+</footer>
+
+<script>
+// Particles
+const cv=document.getElementById('bgc'),cx=cv.getContext('2d');
+let W,H,pts=[];
+const rsz=()=>{W=cv.width=window.innerWidth;H=cv.height=window.innerHeight};
+const mk=()=>{pts=[];for(let i=0;i<60;i++)pts.push({x:Math.random()*W,y:Math.random()*H,r:.3+Math.random()*1.1,vx:(Math.random()-.5)*.2,vy:(Math.random()-.5)*.2,o:.04+Math.random()*.25})};
+const draw=()=>{
+  cx.clearRect(0,0,W,H);
+  for(let i=0;i<pts.length;i++){
+    const p=pts[i];
+    cx.beginPath();cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    cx.fillStyle=`rgba(225,29,72,${p.o})`;cx.fill();
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+    for(let j=i+1;j<pts.length;j++){
+      const q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<95){cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.strokeStyle=`rgba(225,29,72,${.06*(1-d/95)})`;cx.lineWidth=.5;cx.stroke()}
+    }
+  }
+  requestAnimationFrame(draw);
+};
+window.addEventListener('resize',()=>{rsz();mk()});rsz();mk();draw();
+
+// Tabs
+const panels=['p0','p1','p2'],tabs=document.querySelectorAll('.tab');
+function goTab(i,b){panels.forEach((id,j)=>{document.getElementById(id).classList.toggle('on',j===i);tabs[j].classList.toggle('on',j===i)})}
+
+// JSON highlight
+function hl(j){
+  if(typeof j!=='string')j=JSON.stringify(j,null,2);
+  return j.replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g,m=>{
+    if(/^".*":$/.test(m))return`<span class="jk">${m}</span>`;
+    if(/^"/.test(m))return`<span class="js">${m}</span>`;
+    if(/true|false/.test(m))return`<span class="jb">${m}</span>`;
+    if(/null/.test(m))return`<span class="jnu">${m}</span>`;
+    return`<span class="jn">${m}</span>`;
+  });
+}
+
+const CRED=`<div class="cred"><span>🎯 SULAV info tool</span><span class="s">·</span><a href="https://t.me/sulav_don2" target="_blank">@sulav_don2</a><span class="s">·</span><a href="https://t.me/sulav_codex_ff" target="_blank">@sulav_codex_ff</a></div>`;
+function raw(data){const id='r'+Math.random().toString(36).slice(2);return`<div class="raw-hd" onclick="tr('${id}')"><span>📄 Raw JSON</span><span id="a${id}">▼</span></div><div class="raw-pre" id="${id}">${hl(JSON.stringify(data,null,2))}</div>`}
+function tr(id){const e=document.getElementById(id);const o=e.classList.toggle('on');document.getElementById('a'+id).textContent=o?'▲':'▼'}
+function g(o,...ks){for(const k of ks){if(o&&o[k]!=null&&o[k]!=='')return o[k]}return null}
+function errHtml(msg){return`<div class="rcard"><div class="emsg"><div class="emsg-i">❌</div><div class="emsg-t">Error</div><div class="emsg-s">${msg}</div></div>${CRED}</div>`}
+function loading(id,on,lbl){const b=document.getElementById(id);if(on){b.disabled=true;b.innerHTML='<div class="spin"></div> Loading...'}else{b.disabled=false;b.innerHTML=lbl}}
+
+// BR rank label
+const brRanks={0:'Unranked',1:'Bronze',2:'Silver',3:'Gold',4:'Platinum',5:'Diamond',6:'Heroic',7:'Grandmaster'};
+function rankLabel(r){return brRanks[r]||('Rank '+r)}
+
+// Build profile — uses exact proto field names (lowercase)
+function buildProfile(raw_data, serverLabel, fullRaw){
+  const bi = raw_data.basicinfo || raw_data.basicInfo || raw_data;
+  const clan = raw_data.clanbasicinfo || raw_data.clanBasicInfo || {};
+  const pet = raw_data.petinfo || raw_data.petInfo || {};
+  const social = raw_data.socialinfo || raw_data.socialInfo || {};
+
+  const name    = g(bi,'nickname') || '—';
+  const uid     = g(bi,'accountid','accountId') || '—';
+  const region  = g(bi,'region') || serverLabel || '—';
+  const level   = g(bi,'level');
+  const exp     = g(bi,'exp');
+  const liked   = g(bi,'liked');
+  const rank    = g(bi,'rank');
+  const rankpts = g(bi,'rankingpoints','rankingPoints');
+  const csrank  = g(bi,'csrank','csRank');
+  const cspts   = g(bi,'csrankingpoints','csrankingPoints');
+  const clanname= g(bi,'clanname','clanName') || g(clan,'clanname','clanName');
+  const clanlv  = g(clan,'clanlevel','clanLevel');
+  const clanmem = g(clan,'membernum','memberNum');
+  const petname = g(pet,'name');
+  const petlv   = g(pet,'level');
+  const badge   = g(bi,'badgecnt','badgeCnt');
+  const elite   = g(bi,'haselitepass','hasElitePass');
+  const sig     = g(social,'signature');
+  const lastlog = g(bi,'lastloginat','lastLoginAt');
+
+  // Tags
+  const tags=[];
+  if(level) tags.push(`<span class="tag t-yellow">⭐ Lv ${level}</span>`);
+  if(region!=='—') tags.push(`<span class="tag t-red">🌍 ${region}</span>`);
+  if(rank!=null) tags.push(`<span class="tag t-blue">🏆 BR: ${rankLabel(rank)}</span>`);
+  if(csrank!=null) tags.push(`<span class="tag t-purple">⚔️ CS: ${rankLabel(csrank)}</span>`);
+  if(elite) tags.push(`<span class="tag t-green">✨ Elite Pass</span>`);
+
+  // Stat boxes
+  const boxes=[];
+  if(level!=null) boxes.push(`<div class="info-box"><div class="ib-val yellow">${level}</div><div class="ib-key">⭐ Level</div></div>`);
+  if(liked!=null) boxes.push(`<div class="info-box"><div class="ib-val red">${Number(liked).toLocaleString()}</div><div class="ib-key">❤️ Likes</div></div>`);
+  if(rankpts!=null) boxes.push(`<div class="info-box"><div class="ib-val blue">${Number(rankpts).toLocaleString()}</div><div class="ib-key">💎 BR Points</div></div>`);
+  if(cspts!=null) boxes.push(`<div class="info-box"><div class="ib-val purple">${Number(cspts).toLocaleString()}</div><div class="ib-key">⚔️ CS Points</div></div>`);
+  if(badge!=null) boxes.push(`<div class="info-box"><div class="ib-val">${badge}</div><div class="ib-key">🏅 Badges</div></div>`);
+  if(exp!=null) boxes.push(`<div class="info-box"><div class="ib-val green">${Number(exp).toLocaleString()}</div><div class="ib-key">✨ EXP</div></div>`);
+
+  // Info rows
+  const rows=[];
+  if(region!=='—') rows.push(`<div class="irow"><span class="irow-k">🌍 Region</span><span class="irow-v">${region}</span></div>`);
+  if(clanname) rows.push(`<div class="irow"><span class="irow-k">🏰 Guild</span><span class="irow-v">${clanname}${clanlv?' (Lv '+clanlv+')':''}</span></div>`);
+  if(clanmem) rows.push(`<div class="irow"><span class="irow-k">👥 Guild Members</span><span class="irow-v">${clanmem}</span></div>`);
+  if(petname) rows.push(`<div class="irow"><span class="irow-k">🐾 Pet</span><span class="irow-v">${petname}${petlv?' (Lv '+petlv+')':''}</span></div>`);
+  if(sig) rows.push(`<div class="irow"><span class="irow-k">💬 Bio</span><span class="irow-v" style="font-style:italic">${sig}</span></div>`);
+  if(rank!=null) rows.push(`<div class="irow"><span class="irow-k">🏆 BR Rank</span><span class="irow-v">${rankLabel(rank)}${rankpts?' · '+Number(rankpts).toLocaleString()+' pts':''}</span></div>`);
+  if(csrank!=null) rows.push(`<div class="irow"><span class="irow-k">⚔️ CS Rank</span><span class="irow-v">${rankLabel(csrank)}${cspts?' · '+Number(cspts).toLocaleString()+' pts':''}</span></div>`);
+  if(lastlog) rows.push(`<div class="irow"><span class="irow-k">🕐 Last Seen</span><span class="irow-v">${new Date(Number(lastlog)*1000).toLocaleDateString()}</span></div>`);
+  if(elite!=null) rows.push(`<div class="irow"><span class="irow-k">✨ Elite Pass</span><span class="irow-v" style="color:${elite?'var(--green)':'var(--muted)'}">${elite?'Active':'Inactive'}</span></div>`);
+
+  return`<div class="rcard">
+<div class="ptop">
+  <div class="phead"><div class="pav">🎮</div><div class="pmeta"><div class="pname">${name}</div><div class="puid">UID: ${uid}</div><div class="tags">${tags.join('')}</div></div></div>
+  ${boxes.length?`<div class="info-grid">${boxes.join('')}</div>`:''}
+</div>
+${rows.length?`<div class="psec"><div class="psec-t">Player Details</div>${rows.join('')}</div>`:''}
+${raw(fullRaw)}${CRED}</div>`;
+}
+
+// Build stats card
+function buildStats(data, uid, mode, match, fullRaw){
+  const d=data.data||data;
+  const defs={
+    br:[{k:'kill',l:'Kills',c:'red',i:'💀'},{k:'headshot',l:'Headshots',c:'red',i:'🎯'},{k:'win',l:'Wins',c:'yellow',i:'🏆'},{k:'exp',l:'Games',c:'',i:'🎮'},{k:'rankPoints',l:'Rank Points',c:'blue',i:'💎'},{k:'damage',l:'Damage',c:'red',i:'🔥'},{k:'killDeath',l:'K/D',c:'green',i:'⚡'},{k:'assists',l:'Assists',c:'',i:'🤝'},{k:'booyahRate',l:'Win Rate',c:'green',i:'🏅'}],
+    cs:[{k:'kill',l:'Kills',c:'red',i:'💀'},{k:'headshot',l:'Headshots',c:'red',i:'🎯'},{k:'win',l:'Rounds Won',c:'yellow',i:'🏆'},{k:'lose',l:'Lost',c:'',i:'😔'},{k:'rankPoints',l:'Rank Points',c:'blue',i:'💎'},{k:'damage',l:'Damage',c:'red',i:'🔥'},{k:'killDeath',l:'K/D',c:'green',i:'⚡'}]
+  };
+  const boxes=(defs[mode]||defs.br).map(f=>{
+    const v=g(d,f.k,f.k+'s');
+    if(v==null)return'';
+    const dv=typeof v==='number'&&!Number.isInteger(v)?v.toFixed(2):Number(v).toLocaleString();
+    return`<div class="info-box"><div class="ib-val ${f.c}">${dv}</div><div class="ib-key">${f.i} ${f.l}</div></div>`;
+  }).filter(Boolean);
+  const ml=mode==='br'?'🔫 Battle Royale':'⚔️ Clash Squad';
+  return`<div class="rcard">
+<div class="ptop">
+  <div class="phead"><div class="pav">📊</div><div class="pmeta"><div class="pname">Player Stats</div><div class="puid">UID: ${uid}</div><div class="tags"><span class="tag t-red">${ml}</span><span class="tag t-yellow">${match}</span><span class="tag t-blue">${data.server||data.detected_server||''}</span></div></div></div>
+  ${boxes.length?`<div class="info-grid">${boxes.join('')}</div>`:'<p style="color:var(--muted);font-size:13px;margin-top:8px">No stat data returned</p>'}
+</div>
+${raw(fullRaw)}${CRED}</div>`;
+}
+
+// Build search results — proto field is "infos"
+function buildSearch(data, server){
+  // The decoded proto response has field "infos" (from SearchAccountByName response)
+  const r = data.results || {};
+  let list = r.infos || r.accountInfos || r.accounts || [];
+  if(!Array.isArray(list)) list=[];
+
+  if(!list.length)return`<div class="rcard"><div class="emsg"><div class="emsg-i">🔍</div><div class="emsg-t">No players found</div><div class="emsg-s">Try a different name or switch server region</div></div>${CRED}</div>`;
+
+  const items=list.slice(0,15).map(p=>{
+    const nm=g(p,'nickname')||'Unknown';
+    const id=g(p,'accountid','accountId')||'';
+    const lv=g(p,'level');
+    const rg=g(p,'region')||server;
+    const cn=g(p,'clanname','clanName');
+    const rk=g(p,'rank');
+    return`<div class="sitem" onclick="clickSearch('${id}','${server}')">
+      <div class="sav">🎮</div>
+      <div class="sinfo">
+        <div class="sname">${nm}</div>
+        <div class="smeta">UID: ${id}${rg?' · '+rg:''}${lv?' · Lv '+lv:''}${rk?' · '+rankLabel(rk):''}</div>
+        ${cn?`<div class="smeta" style="color:var(--red3)">🏰 ${cn}</div>`:''}
+      </div>
+      <div class="sarrow">→</div>
+    </div>`;
+  }).join('');
+
+  return`<div class="rcard">
+<div style="padding:14px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+  <div style="font-size:14px;font-weight:700">${list.length} result${list.length!==1?'s':''} in <span style="color:var(--red2)">${server}</span></div>
+</div>
+<div class="slist">${items}</div>
+<div style="padding:0 22px 12px;font-size:12px;color:var(--muted)">Click a player to view their full profile</div>
+${raw(data)}${CRED}</div>`;
+}
+
+// UID Lookup
+async function doUID(){
+  const uid=document.getElementById('i-uid').value.trim();
+  const srv=document.getElementById('i-uid-srv').value;
+  const out=document.getElementById('r-uid');
+  if(!uid){out.innerHTML=errHtml('Please enter a UID');return}
+  loading('b-uid',true);
+  const params=new URLSearchParams({uid});
+  if(srv!=='AUTO') params.set('server',srv);
+  try{
+    const res=await fetch('/info?'+params);
+    const d=await res.json();
+    out.innerHTML=res.ok&&d.success?buildProfile(d.data||d,d.server||srv,d):errHtml(d.error||'Failed to fetch player');
+  }catch(e){out.innerHTML=errHtml('Network error: '+e.message)}
+  loading('b-uid',false,'🔍 Lookup Player');
+}
+
+// Name Search
+async function doName(){
+  const nm=document.getElementById('i-name').value.trim();
+  const srv=document.getElementById('i-srv').value;
+  const out=document.getElementById('r-name');
+  if(!nm){out.innerHTML=errHtml('Please enter a nickname');return}
+  if(nm.length<3){out.innerHTML=errHtml('Nickname must be at least 3 characters');return}
+  loading('b-name',true);
+  try{
+    const res=await fetch(`/search?name=${encodeURIComponent(nm)}&server=${srv}`);
+    const d=await res.json();
+    out.innerHTML=res.ok&&d.success?buildSearch(d,srv):errHtml(d.error||'Search failed');
+  }catch(e){out.innerHTML=errHtml('Network error: '+e.message)}
+  loading('b-name',false,'🔍 Search Players');
+}
+
+// Stats
+async function doStats(){
+  const uid=document.getElementById('i-suid').value.trim();
+  const srv=document.getElementById('i-ssrv').value;
+  const gm=document.getElementById('i-gm').value;
+  const mm=document.getElementById('i-mm').value;
+  const out=document.getElementById('r-stats');
+  if(!uid){out.innerHTML=errHtml('Please enter a UID');return}
+  loading('b-stats',true);
+  const params=new URLSearchParams({uid,gamemode:gm,matchmode:mm});
+  if(srv!=='AUTO') params.set('server',srv);
+  try{
+    const res=await fetch('/stats?'+params);
+    const d=await res.json();
+    out.innerHTML=res.ok&&d.success?buildStats(d,uid,gm,mm,d):errHtml(d.error||'Failed to fetch stats');
+  }catch(e){out.innerHTML=errHtml('Network error: '+e.message)}
+  loading('b-stats',false,'📊 Get Stats');
+}
+
+// Click search result
+async function clickSearch(uid,server){
+  goTab(0,tabs[0]);
+  document.getElementById('i-uid').value=uid;
+  document.getElementById('i-uid-srv').value='AUTO';
+  await doUID();
+  document.getElementById('tool').scrollIntoView({behavior:'smooth'});
+}
+
+// Enter keys
+document.getElementById('i-uid').addEventListener('keydown',e=>{if(e.key==='Enter')doUID()});
+document.getElementById('i-name').addEventListener('keydown',e=>{if(e.key==='Enter')doName()});
+document.getElementById('i-suid').addEventListener('keydown',e=>{if(e.key==='Enter')doStats()});
+</script>
+</body>
+</html>
